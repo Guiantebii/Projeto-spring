@@ -2,11 +2,21 @@ package br.com.alura.screenmatch.principal;
 
 import br.com.alura.screenmatch.model.DadosSerie;
 import br.com.alura.screenmatch.model.DadosTemporada;
+import br.com.alura.screenmatch.model.Linguagem;
+import br.com.alura.screenmatch.model.Serie;
 import br.com.alura.screenmatch.service.ConsumoApi;
 import br.com.alura.screenmatch.service.ConverteDados;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Principal {
 
@@ -25,6 +35,7 @@ public class Principal {
                     1 - Buscar séries
                     2 - Buscar episódios
                     3 - Listar Séries Buscadas
+                    4 - Array
                     0 - Sair
                     """;
 
@@ -42,6 +53,21 @@ public class Principal {
                 case 3:
                     listarSeriesBuscadas();
                     break;
+                case 4:
+                    List<String> input = Arrays.asList("10", "abc", "20", "30x");
+                    input.stream().map(str -> {
+                        try {
+                            return Optional.of(Integer.parseInt(str));
+                        }
+                        catch (NumberFormatException e) {
+                            return Optional.<Integer>empty();
+                        }
+                    }
+                    ).filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .toList()
+                    .forEach(System.out::println);
+
                 case 0:
                     System.out.println("Saindo...");
                     break;
@@ -78,6 +104,48 @@ public class Principal {
     }
 
     private void listarSeriesBuscadas() {
-        dadosSeries.forEach(System.out::println);
+        List<Serie> series = new ArrayList<>();
+        series = dadosSeries.stream()
+                .map(d -> new Serie(d))
+                        .collect(Collectors.toList());
+        series.stream()
+                .sorted(Comparator.comparing(Serie::getGenero))
+                .forEach(System.out::println);
     }
+
+    public class MyMemoryURLGenerator {
+        public static String urlEncodeQuery(String text, Linguagem lingua1, Linguagem lingua2) {
+            String texto = URLEncoder.encode(text, StandardCharsets.UTF_8);
+            String langpair = URLEncoder.encode(lingua1.siglaLinguagem+"|"+lingua2.siglaLinguagem, StandardCharsets.UTF_8);
+
+            String url = "https://api.mymemory.translated.net/get?q="+texto+"&langpair="+langpair;
+
+            return url;
+        }
+    }
+
+    public class MyMemoryApiConnector {
+        public static String get(String texto, Linguagem lingua1, Linguagem lingua2) {
+            HttpClient client = HttpClient.newHttpClient();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create(MyMemoryURLGenerator.urlEncodeQuery(texto, lingua1, lingua2)))
+                    .build();
+
+            try {
+                HttpResponse<String> resposta = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+                if (resposta.statusCode() == 200) {
+                    return resposta.body();
+                } else {
+                    throw new IOException("Resposta mal-sucedida da MyMemory API");
+                }
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+
 }
