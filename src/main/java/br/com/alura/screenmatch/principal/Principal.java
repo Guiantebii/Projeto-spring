@@ -45,6 +45,8 @@ public class Principal {
                     6-  Buscar Top 5 Serie
                     7 - Buscar Serie por genero
                     8 - Buscar Serie por número de temporadas e avaliação
+                    9 - Buscar Serie por número de temporadas e avaliação(usando o jpql)
+                    10 - Buscar Episodio Por trecho
                     0 - Sair
                     """;
 
@@ -77,6 +79,12 @@ public class Principal {
                 case 8:
                     buscarSeriesPorTemporadasEAvaliacao();
                     break;
+                case 9:
+                    buscarSerieFiltradaPorTemporadasEAvaliacao();
+                    break;
+                case 10:
+                    buscarEpisodioPorTrecho();
+                    break;
                 case 0:
                     System.out.println("Saindo...");
                     break;
@@ -85,6 +93,25 @@ public class Principal {
                     System.out.println("Opção inválida");
             }
         }
+    }
+
+    private void buscarEpisodioPorTrecho() {
+        System.out.println("Qual o nome do episodio para busca? ");
+        var trechoEpisodio = leitura.nextLine();
+        List<Episodio> episodiosEcnotrados = serieRepository.episodioPorTrecho(trechoEpisodio);
+
+        episodiosEcnotrados.forEach(e ->
+                System.out.printf("Série: %s Temporada %s - Episódio %s - %s\n", e.getSerie().getTitulo(),e.getTemporada(),e.getNumeroEpisodio(),e.getTitulo()));
+    }
+
+    private void buscarSerieFiltradaPorTemporadasEAvaliacao() {
+        System.out.println("Escolha o máximo de temporadas da serie");
+        var temporadas = leitura.nextInt();
+        System.out.println("Avaliações a partir de qual valor? ");
+        var avaliacao = leitura.nextDouble();
+        List<Serie> seriesPorTemporadasEAvaliacao = serieRepository.seriesPorTemporadaEAValiacao(temporadas, avaliacao);
+        seriesPorTemporadasEAvaliacao.forEach(s -> System.out.println(s.getTitulo()
+                + " avaliacao: " + s.getAvaliacao() ));
     }
 
     private void buscarSeriesPorTemporadasEAvaliacao() {
